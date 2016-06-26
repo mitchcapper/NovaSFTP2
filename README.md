@@ -1,10 +1,11 @@
 NovaSFTP2 WPF file change SFTP monitor for Windows
 =================================
 
-
 OVERVIEW
 -----
 NovaSFTP2 is Windows file change monitor that uploads to a remote SFTP server when it detects changes to local files.
+
+![NovaSFTP2 Screenshot](https://raw.githubusercontent.com/mitchcapper/NovaSFTP2/master/screenshot.png "NovaSFTP2 Screenshot")
 
 Features
 -----
