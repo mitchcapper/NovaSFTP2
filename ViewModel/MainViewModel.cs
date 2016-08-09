@@ -169,9 +169,11 @@ namespace NovaSFTP2.ViewModel {
 			TextWriter tw = new StreamWriter(recent_file);
 			tw.Write(name + at_bottom);
 			tw.Close();
-			Dispatcher.CurrentDispatcher.BeginInvoke((Action)UpdateJumpList);
+			dispatcher?.BeginInvoke((Action)UpdateJumpList);
 
 		}
+
+		public Dispatcher dispatcher;
 		private readonly string recent_file = HostInfo.GetUserAppDataPath() + "\\program.recent";
 		private void UpdateJumpList() {
 			var list = new JumpList();

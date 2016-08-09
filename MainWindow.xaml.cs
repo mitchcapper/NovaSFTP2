@@ -15,6 +15,7 @@ namespace NovaSFTP2 {
 	public partial class MainWindow : Window {
 		public MainWindow() {
 			InitializeComponent();
+			vm.dispatcher = Dispatcher;
 			Loaded += MainWindow_Loaded;
 			instance = this;
 		}
@@ -26,10 +27,10 @@ namespace NovaSFTP2 {
 
 		void MainWindow_Loaded(object sender, RoutedEventArgs e) {
 			TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
-			var vm = DataContext as MainViewModel;
 			vm.ProgressMade += ProgressMade;
 			vm.loaded();
 		}
+		private MainViewModel vm => DataContext as MainViewModel;
 		private Task delay_task;
 		private async void ThreadedProgMade(double d) {
 			TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
