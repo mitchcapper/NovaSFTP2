@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -17,7 +18,8 @@ namespace NovaSFTP2.ViewModel {
 		private SFTPFileUploader uploader;
 		private FileSystemWatcher watcher;
 		public MainViewModel() {
-			hosts = new ObservableCollection<HostInfo>(HostInfo.LoadHosts());
+			var settings = HostInfo.LoadSettings();
+			hosts = new ObservableCollection<HostInfo>(settings.hosts);
 			if (hosts.Count == 0)
 				hosts.Add(new HostInfo { });
 			selected_host = hosts.FirstOrDefault(a => String.IsNullOrWhiteSpace(a.name));
@@ -30,6 +32,9 @@ namespace NovaSFTP2.ViewModel {
 			watcher.NotifyFilter = NotifyFilters.LastWrite;
 			watcher.Changed += FileChanged;
 			UpdateButton();
+			try {
+				ignore_regex = settings.ignore_regex;
+			} catch (Exception) {}
 		}
 		public void loaded() {
 			var args = Environment.GetCommandLineArgs();
@@ -119,7 +124,7 @@ namespace NovaSFTP2.ViewModel {
 				return;
 			}
 			hosts.Remove(selected_host);
-			await HostInfo.SaveHosts(hosts);
+			await HostInfo.SaveSettings(new SettingsInfo { ignore_regex = ignore_regex, hosts = hosts.ToArray() });
 		}
 		public ICommand FavSaveCmd => new OurCommand(FavSave);
 		private async Task FavSave() {
@@ -136,7 +141,7 @@ namespace NovaSFTP2.ViewModel {
 			selected_host.recursive = include_subfolders;
 			selected_host.remoteFolder = remote_folder;
 			selected_host.username = username;
-			await HostInfo.SaveHosts(hosts);
+			await HostInfo.SaveSettings(new SettingsInfo {ignore_regex = ignore_regex,hosts = hosts.ToArray() });
 		}
 
 		public ICommand FavSaveAsCmd => new OurCommand(FavSaveAs);
@@ -265,6 +270,24 @@ namespace NovaSFTP2.ViewModel {
 			set { Set(() => action_button_content, ref _action_button_content, value); }
 		}
 		private string _action_button_content;
+
+
+		public string ignore_regex {
+			get { return _ignore_regex; }
+			set {
+				try {
+					var ex = new Regex(value, RegexOptions.IgnorePatternWhitespace);
+				} catch (Exception e) {
+					throw new ArgumentException(e.Message,e);
+				}
+				if (Set(() => ignore_regex, ref _ignore_regex, value)) {
+					uploader.SetRegex(ignore_regex);
+				}
+
+			}
+		}
+		private string _ignore_regex;
+
 
 	}
 }

@@ -11,7 +11,7 @@ Features
 -----
 - Monitor a local folder (or sub folders) for changes
 - Supports windows jump lists
-- Will ignore .svn, .git, .tp, mrgtmp, and ~ files 
+- Will ignore .svn, .git, .tmp, mrgtmp, and ~ files by default (can change the regex, and note the regex ignores spaces)
 - Supports windows taskbar progress support
 - Can save defaults, or save as a profile
 - Paegent support for publickey auth (in addition to password)
@@ -22,5 +22,4 @@ Features
 Notes
 -----
 - Will not create remote folders if they don't exist
-- Does not have a way to configure what files are ignored, hard coded into the code currently
 - To create a profile, set the settings as you like then hit save as to give it a name.

@@ -8,6 +8,17 @@ using System.Xml.Serialization;
 
 namespace NovaSFTP2.Model {
 	[Serializable]
+	public class SettingsInfo {
+		public HostInfo[] hosts;
+		public string ignore_regex;
+		public SettingsInfo() {
+			ignore_regex = @"( [.](svn|git|tmp[/\\]) | mrgtmp | ~ | \.tmp$)";
+			hosts = new HostInfo[0];
+		}
+		
+	}
+
+	[Serializable]
 	public class HostInfo {
 		public string name;
 		public string host;
@@ -43,9 +54,9 @@ namespace NovaSFTP2.Model {
 			return path;
 		}
 		private static string file_path = GetUserAppDataPath() + "\\program_settings.xml";
-		public static async Task SaveHosts(IEnumerable<HostInfo> hosts) {
+		public static async Task SaveSettings(SettingsInfo info) {
 			using (var writer = new StreamWriter(file_path)) {
-				await ObjDumpToFile(hosts.ToArray(), writer);
+				await ObjDumpToFile(info, writer);
 			}
 		}
 		public static async Task ObjDumpToFile(Object obj, StreamWriter file) {
@@ -63,15 +74,24 @@ namespace NovaSFTP2.Model {
 				text = (string)obj;
 			await file.WriteAsync(text).ConfigureAwait(false);
 		}
-		public static IEnumerable<HostInfo> LoadHosts() {
-			HostInfo[] hosts = new HostInfo[0];
-			var serializer = new XmlSerializer(typeof(HostInfo[]));
+		public static SettingsInfo LoadSettings() {
+			var ret = new SettingsInfo();
 			if (File.Exists(file_path)) {
-				using (StreamReader reader = new StreamReader(file_path)) {
-					hosts = (HostInfo[])serializer.Deserialize(reader);
+				try {
+					using (StreamReader reader = new StreamReader(file_path)) {
+						var serializer = new XmlSerializer(typeof(SettingsInfo));
+						ret = (SettingsInfo) serializer.Deserialize(reader);
+					}
+				} catch {
+					try {
+						using (StreamReader reader = new StreamReader(file_path)) {
+							var serializer = new XmlSerializer(typeof (HostInfo[]));
+							ret.hosts = (HostInfo[]) serializer.Deserialize(reader);
+						}
+					} catch {}
 				}
 			}
-			return hosts;
+			return ret;
 		}
 	}
 

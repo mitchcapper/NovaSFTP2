@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
         Icon="icon1.ico"
-        Title="{Binding title}" Height="360" Width="525" DataContext="{Binding Main, Source={StaticResource Locator}}" ResizeMode="NoResize" >
+        Title="{Binding title}" Height="380" Width="525" DataContext="{Binding Main, Source={StaticResource Locator}}" ResizeMode="NoResize" >
 	<Window.TaskbarItemInfo>
 		<TaskbarItemInfo />
 	</Window.TaskbarItemInfo>
@@ -37,6 +37,7 @@
 			<RowDefinition />
 			<RowDefinition Height="50" />
 			<RowDefinition />
+			<RowDefinition />
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="150"/>
@@ -63,6 +64,9 @@
 			<Button Content="Save As" Command="{Binding FavSaveAsCmd, Mode=OneWay}" />
 		</StackPanel>
 		<Button Content="{Binding action_button_content}" Command="{Binding  ToggleConnectedCmd, Mode=OneWay}" Grid.Row="7" Grid.ColumnSpan="2"  />
+		<Label Content="Ignore RegEx Pattern:" Grid.Row="8" />
+		<TextBox Text="{Binding ignore_regex,Mode=TwoWay}" Grid.Row="8" Grid.Column="1" />
+		
 		<TextBox Grid.Row="2" Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
 			<TextBox.Style>
 				<Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -165,18 +166,11 @@ namespace NovaSFTP2.Model {
 			ConnChanged();
 		}
 		private Dictionary<string, DateTime> last_changed = new Dictionary<string, DateTime>();
-		private string[] invalid_parts = new[] { ".svn", ".git", ".tmp\\", ".tmp/", "mrgtmp", "~" };
-		private string[] invalid_ends = new[] { ".tmp" };
 		public void AddFileUpload(String local_file) {
 			if (Directory.Exists(local_file))
 				return;
-			if (invalid_parts.Any(local_file.Contains)) {
+			if (ignore_regex.IsMatch(local_file))
 				return;
-			}
-			if (invalid_ends.Any(local_file.EndsWith)) {
-				return;
-			}
-
 			last_changed[local_file] = DateTime.Now;
 			if (!CurQueue.Contains(local_file))
 				CurQueue.Enqueue(local_file);
@@ -186,5 +180,9 @@ namespace NovaSFTP2.Model {
 			public ulong uploaded_bytes;
 		}
 		public EventHandler<UploadProgressEvtArgs> UploadEvtProgress;
+		private Regex ignore_regex;
+		public void SetRegex(string ignore_regex_str) {
+			ignore_regex = new Regex(ignore_regex_str,RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+		}
 	}
 }
