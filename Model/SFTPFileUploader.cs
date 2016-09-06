@@ -78,7 +78,7 @@ namespace NovaSFTP2.Model {
 				disconnect();
 				if (Debugger.IsAttached)
 					throw ee;
-				MainWindow.ShowMessage("unknown error let us know: " + ee.Message,"Unknown Error");
+				MainWindow.ShowMessage("unknown error let us know: " + ee.Message, "Unknown Error");
 			}
 		}
 		private void UploadCallback(ulong progress, ulong total_size) {
@@ -133,8 +133,8 @@ namespace NovaSFTP2.Model {
 				using (var file = File.OpenRead(filename)) {
 					client.UploadFile(file, remote_name, true, l => UploadCallback(l, (ulong)stat.Length));
 				}
-			} catch (FileNotFoundException) { }//moved or deleted before we uplaoded this is ok
-			 catch (IOException e) {
+			} catch (FileNotFoundException) { } //moved or deleted before we uplaoded this is ok
+			catch (IOException e) {
 				if (e.Message.Contains("used by another process")) {
 					await Task.Delay(100);
 					if (!CurQueue.Contains(filename))
@@ -151,6 +151,12 @@ namespace NovaSFTP2.Model {
 			} catch (SftpPathNotFoundException) {
 				disconnect();
 				MainWindow.ShowMessage("Remote file not found, most likely invalid remote path(make sure folder exists)", "Path Not Found Error");
+			} catch (SshException e) {
+				if (e.Message == "Channel was closed.") {
+					disconnect();
+					MainWindow.ShowMessage("Connection to server lost details: " + e.Message, "Lost Connection");
+				} else
+					throw e;
 			}
 		}
 		public void disconnect() {
@@ -182,7 +188,7 @@ namespace NovaSFTP2.Model {
 		public EventHandler<UploadProgressEvtArgs> UploadEvtProgress;
 		private Regex ignore_regex;
 		public void SetRegex(string ignore_regex_str) {
-			ignore_regex = new Regex(ignore_regex_str,RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+			ignore_regex = new Regex(ignore_regex_str, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 		}
 	}
 }
