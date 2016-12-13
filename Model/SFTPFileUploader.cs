@@ -155,10 +155,13 @@ namespace NovaSFTP2.Model {
 				if (e.Message == "Channel was closed.") {
 					disconnect();
 					MainWindow.ShowMessage("Connection to server lost details: " + e.Message, "Lost Connection");
+				} else if (e.Message == "Failure.") {
+					disconnect();
+					MainWindow.ShowMessage("General failure from SSH Libary", "General Failure");
 				} else
 					throw e;
 			}
-		}
+			}
 		public void disconnect() {
 			if (client != null) {
 				try {

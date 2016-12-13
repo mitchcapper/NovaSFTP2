@@ -29,13 +29,24 @@ namespace NovaSFTP2.ViewModel {
 			uploader.UploadEvtProgress += UploadEvtProgress;
 			uploader.ConnectedChanged += ConnectedChanged;
 			watcher = new FileSystemWatcher();
-			watcher.NotifyFilter = NotifyFilters.LastWrite;
+			watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName;
 			watcher.Changed += FileChanged;
+			watcher.Renamed += FileRenamed;
+			watcher.Created += FileCreated;
 			UpdateButton();
 			try {
 				ignore_regex = settings.ignore_regex;
 			} catch (Exception) {}
 		}
+
+		private void FileCreated(object sender, FileSystemEventArgs e) {
+			uploader.AddFileUpload(e.FullPath);
+		}
+
+		private void FileRenamed(object sender, RenamedEventArgs e) {
+			uploader.AddFileUpload(e.FullPath);
+		}
+
 		public void loaded() {
 			var args = Environment.GetCommandLineArgs();
 			if (args.Length == 2) {
@@ -53,7 +64,6 @@ namespace NovaSFTP2.ViewModel {
 		private string _title;
 
 		private void ConnectedChanged(object sender, EventArgs event_args) {
-			Debug.WriteLine("Connection changed status is: " + connected);
 			UpdateButton();
 			if (connected)
 				StartWatcher();
