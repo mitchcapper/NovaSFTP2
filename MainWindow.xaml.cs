@@ -22,7 +22,12 @@ namespace NovaSFTP2 {
 
 		private static MainWindow instance;
 		public static void ShowMessage(string message, string caption) {
-			instance.Dispatcher.BeginInvoke((Action) (() => MessageBox.Show(message, caption)));
+						instance.Dispatcher.Invoke(() => {
+							instance.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;
+							instance.TaskbarItemInfo.ProgressValue = 100;
+							MessageBox.Show(instance, message, caption);
+							instance.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
+						});
 		}
 
 		void MainWindow_Loaded(object sender, RoutedEventArgs e) {

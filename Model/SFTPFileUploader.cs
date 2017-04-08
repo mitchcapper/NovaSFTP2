@@ -25,7 +25,7 @@ namespace NovaSFTP2.Model {
 		private SftpClient client;
 		private string base_path;
 		private int base_path_len;
-		public void connect(String host, int port, String user, String local_path, String remote_path, String password) {
+		public async Task connect(String host, int port, String user, String local_path, String remote_path, String password) {
 			base_path = local_path;
 			base_path_len = (base_path.EndsWith("/") || base_path.EndsWith("\\")) ? base_path.Length : base_path.Length + 1; //if it doesnt end in a slash we need to skip it
 			if (String.IsNullOrWhiteSpace(user)) {
@@ -47,13 +47,13 @@ namespace NovaSFTP2.Model {
 					client.ChangeDirectory(remote_path);
 				ConnChanged();
 			} catch (SocketException e) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Unable to connect due to socket exception of: " + e.Message, "Connection Error");
 			} catch (SshAuthenticationException e) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Unable to connect due to auth exception of: " + e.Message, "Connection Error");
 			} catch (SftpPathNotFoundException) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Unable to switch to remote folder of: " + remote_path + " as it doesn't exist", "Connection Error");
 			}
 		}
@@ -65,17 +65,17 @@ namespace NovaSFTP2.Model {
 		public bool is_connected {
 			get { return client != null && client.IsConnected; }
 		}
-		void client_ErrorOccurred(object sender, Renci.SshNet.Common.ExceptionEventArgs e) {
+		async void client_ErrorOccurred(object sender, Renci.SshNet.Common.ExceptionEventArgs e) {
 			try {
 				throw e.Exception;
 			} catch (SocketException exp) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Connection lost due to " + exp.SocketErrorCode + ": " + exp.Message, "Connection Error");
 			} catch (SshConnectionException ss_exp) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Connection issue due to " + ss_exp.DisconnectReason + ": " + ss_exp.Message, "Connection Error");
 			} catch (Exception ee) {
-				disconnect();
+				await disconnect();
 				if (Debugger.IsAttached)
 					throw ee;
 				MainWindow.ShowMessage("unknown error let us know: " + ee.Message, "Unknown Error");
@@ -88,43 +88,48 @@ namespace NovaSFTP2.Model {
 				UploadEvtProgress(this, evt);
 		}
 		ConcurrentQueue<string> CurQueue = new ConcurrentQueue<string>();
-		private async void UploadLoop() {
+		private void UploadLoop() {//don't make async as then lose thread name
 			string file;
 			string last_file = null;
 			int was_connected_cnt = 0;
 			while (true) {
-				while (CurQueue.TryDequeue(out file)) {
-					if (!is_connected) {
-						was_connected_cnt = 0;
-						CurQueue = new ConcurrentQueue<string>();
-						disconnect();
-						MainWindow.ShowMessage("Connection to server lost.", "Lost Connection");//maybe not supposed to ever happen? should have been caught sooner
-						break;
-					}
-					was_connected_cnt = 1;
-					if (file == last_file)
-						await Task.Delay(50);
-					last_file = file;
-					if ((DateTime.Now - last_changed[file]).TotalMilliseconds < 50) {
-						CurQueue.Enqueue(file);
-						continue;
-					}
-					var remote_name = file.Substring(base_path_len);
-					remote_name = remote_name.Replace('\\', '/');
-					if (CurQueue.Contains(file))//continue if it was added to the queue again since we started
-						continue;
-					await UploadFile(file, remote_name);
-					if (!CurQueue.Contains(file))
-						last_changed.Remove(file);
-
-				}
-				bool is_conn = false;
-				if (was_connected_cnt > 0 && was_connected_cnt++ < 60 * 100 || (is_conn = is_connected)) { //so isconnected is a bit of a possible costly call so lets not call it every 50ms.  Lets cache for up to 5 minutes
-					if (is_conn)
+				try {
+					while (CurQueue.TryDequeue(out file)) {
+						if (!is_connected) {
+							was_connected_cnt = 0;
+							CurQueue = new ConcurrentQueue<string>();
+							disconnect().Wait();
+							MainWindow.ShowMessage("Connection to server lost.", "Lost Connection"); //maybe not supposed to ever happen? should have been caught sooner
+							break;
+						}
 						was_connected_cnt = 1;
-					await Task.Delay(50);
-				} else
-					await Task.Delay(1000);
+						if (file == last_file)
+							Task.Delay(50).Wait();
+						last_file = file;
+						if ((DateTime.Now - last_changed[file]).TotalMilliseconds < 50) {
+							CurQueue.Enqueue(file);
+							continue;
+						}
+						var remote_name = file.Substring(base_path_len);
+						remote_name = remote_name.Replace('\\', '/');
+						if (CurQueue.Contains(file)) //continue if it was added to the queue again since we started
+							continue;
+						UploadFile(file, remote_name).Wait();
+						if (!CurQueue.Contains(file))
+							last_changed.Remove(file);
+
+					}
+					bool is_conn = false;
+					if (was_connected_cnt > 0 && was_connected_cnt++ < 60 * 100 || (is_conn = is_connected)) {
+						//so isconnected is a bit of a possible costly call so lets not call it every 50ms.  Lets cache for up to 5 minutes
+						if (is_conn)
+							was_connected_cnt = 1;
+						Task.Delay(50).Wait();
+					} else
+						Task.Delay(1000).Wait();
+				}catch(Exception e) {
+					MessageBox.Show("Exception in upload loop should attach debugger and figure out why this is not caught currently: " + e.Message + "\n" + e.StackTrace);
+				}
 			}
 		}
 		private async Task UploadFile(String filename, String remote_name) {
@@ -143,31 +148,38 @@ namespace NovaSFTP2.Model {
 				}
 				throw e;
 			} catch (SshConnectionException e) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Connection to server lost details: " + e.Message, "Lost Connection");
 			} catch (SftpPermissionDeniedException e) {
-				disconnect();
+				await disconnect();
 				MainWindow.ShowMessage("Permission denied trying to upload due to: " + e.Message, "Permission Error");
-			} catch (SftpPathNotFoundException) {
-				disconnect();
-				MainWindow.ShowMessage("Remote file not found, most likely invalid remote path(make sure folder exists)", "Path Not Found Error");
+			} catch (SftpPathNotFoundException e) {
+				await disconnect();
+				MainWindow.ShowMessage($"Remote file not accessible, most likely invalid remote path(make sure folder exists): {remote_name}", "Path Not Found Error");
 			} catch (SshException e) {
 				if (e.Message == "Channel was closed.") {
-					disconnect();
+					await disconnect();
 					MainWindow.ShowMessage("Connection to server lost details: " + e.Message, "Lost Connection");
 				} else if (e.Message == "Failure.") {
-					disconnect();
+					await disconnect();
 					MainWindow.ShowMessage("General failure from SSH Libary", "General Failure");
 				} else
 					throw e;
 			}
 			}
-		public void disconnect() {
+		public async Task disconnect() {
 			if (client != null) {
 				try {
-					client.Disconnect();
-					if (client.IsConnected)
-						client.Disconnect();
+					var tsk = Task.Run(() => {
+						if (client.IsConnected) //otherwise it can hang forever
+							client.Disconnect();
+						if (client.IsConnected)
+							client.Disconnect();
+					});
+					await Task.WhenAny(tsk, Task.Delay(60 * 1000));
+					if (!tsk.IsCompleted) {
+						MessageBox.Show("Prevented a hang on disconnect");
+					}
 				} catch (Exception e) {
 					Debug.WriteLine("Unable to disconnect due to: " + e.Message);
 				}

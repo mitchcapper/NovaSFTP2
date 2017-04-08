@@ -97,23 +97,23 @@ namespace NovaSFTP2.ViewModel {
 			title = t_str;
 
 		}
-		private void connect() {
-			uploader.connect(hostname, port, username, local_folder, remote_folder, password);
+		private async Task connect() {
+			await uploader.connect(hostname, port, username, local_folder, remote_folder, password);
 
 			if (String.IsNullOrWhiteSpace(selected_host?.name) == false)
 				UpdateRecent(selected_host.name);
 		}
-		private void disconnect() {
+		private async Task disconnect() {
 			StopWatcher();
-			uploader.disconnect();
+			await uploader.disconnect();
 		}
 		private bool connected { get { return uploader.is_connected; } }
-		public ICommand ToggleConnectedCmd => new OurCommand(ToggleConnected,true,true);
-		private void ToggleConnected() {
+		public ICommand ToggleConnectedCmd => new OurCommand(ToggleConnected,true);
+		private async Task ToggleConnected() {
 			if (connected)
-				disconnect();
+				await disconnect();
 			else
-				connect();
+				await Task.Run(async ()=> await connect());
 		}
 		private void FileChanged(object sender, FileSystemEventArgs args) {
 			if (args.ChangeType == WatcherChangeTypes.Deleted)
