@@ -20,7 +20,7 @@ namespace NovaSFTP2.Model {
 				MainWindow.ShowMessage("No user specified", "Missing Username");
 				return;
 			}
-			if (password == null) {
+			if (String.IsNullOrWhiteSpace(password)) {
 				var agent = new PageantProtocol();
 				var conn = new AgentConnectionInfo(host, port, user, agent);
 				client = new SftpClient(conn);
