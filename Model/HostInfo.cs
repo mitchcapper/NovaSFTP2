@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using NovaSFTP2.ViewModel;
 
 namespace NovaSFTP2.Model {
 	[Serializable]
@@ -24,9 +25,14 @@ namespace NovaSFTP2.Model {
 		public string host;
 		public int port = 22;
 		public string username = "root";
+		public string password = "";
 		public string localFolder;
 		public bool recursive;
 		public string remoteFolder;
+		public string container;
+		public UPLOADER_TYPE upload_type = UPLOADER_TYPE.SFTP;
+		public TLS_MODE tls_mode = TLS_MODE.Required;
+		public bool use_compression=true;
 		public override string ToString() {
 			return name??"";
 		}

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
         Icon="icon1.ico"
-        Title="{Binding title}" Height="380" Width="525" DataContext="{Binding Main, Source={StaticResource Locator}}" ResizeMode="NoResize" >
+        Title="{Binding title}" Height="410" Width="525" DataContext="{Binding Main, Source={StaticResource Locator}}" ResizeMode="NoResize" >
 	<Window.TaskbarItemInfo>
 		<TaskbarItemInfo />
 	</Window.TaskbarItemInfo>
@@ -24,72 +24,127 @@
 				<Setter Property="VerticalAlignment" Value="Center"/>
 				<Setter Property="HorizontalAlignment" Value="Center"/>
 				<Setter Property="Padding" Value="6"/>
-				
+
 			</Style>
 
-		</Grid.Resources>		
+		</Grid.Resources>
 		<Grid.RowDefinitions>
-			<RowDefinition />
-			<RowDefinition />
-			<RowDefinition />
-			<RowDefinition />
-			<RowDefinition />
-			<RowDefinition />
+			<RowDefinition Height="2*" />
+			<RowDefinition x:Name="rowDefAuth" Height="3*" />
+			<RowDefinition Height="3*" />
 			<RowDefinition Height="50" />
-			<RowDefinition />
-			<RowDefinition />
+			<RowDefinition Height="1*" />
+			<RowDefinition Height="1*" />
 		</Grid.RowDefinitions>
-		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="150"/>
-			<ColumnDefinition/>
-			<ColumnDefinition Width="Auto"/>
-		</Grid.ColumnDefinitions>
-		<Label Content="Host:" />
-		<TextBox Text="{Binding hostname}" Grid.Column="1" />
-		<TextBox Text="{Binding port}" Width="40" Grid.Column="2" />
-		<Label Content="Username:" Grid.Row="1" />
-		<TextBox Text="{Binding username}" Grid.Row="1" Grid.Column="1" />
-		<Label Content="Password:" Grid.Row="2" />
-		<Label Content="Local Folder:" Grid.Row="3" />
-		<controls:AutoCompleteBox x:Name="txtPath" Text="{Binding local_folder, Mode=TwoWay}" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" Populating="FilePathBox_OnPopulating" />
-<!--		<TextBox Text="{Binding local_folder}" Grid.Row="3" Grid.Column="1" />-->
-		<Label Content="Monitor Sub Folders:" Grid.Row="4" />
-		<CheckBox IsChecked="{Binding include_subfolders}" Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" />
-		<Label Content="Remote Base Folder:" Grid.Row="5" />
-		<TextBox Text="{Binding remote_folder}" Grid.Row="5" Grid.Column="1" />
-		<StackPanel Orientation="Horizontal" Grid.Row="6" Grid.ColumnSpan="3" HorizontalAlignment="Center">
-			<ComboBox StaysOpenOnEdit="True" IsEditable="True" ItemsSource="{Binding hosts}" SelectedItem="{Binding selected_host, Mode=TwoWay}" Width="225" VerticalAlignment="Center" />
+		<Grid Grid.Row="0">
+			<Grid.RowDefinitions>
+				<RowDefinition />
+				<RowDefinition />
+				</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="150"/>
+				<ColumnDefinition/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<Label Content="Connector Type:"/>
+			<StackPanel Grid.Column="1" VerticalAlignment="Center"  HorizontalAlignment="Left" Margin="10,0" Orientation="Horizontal" Grid.ColumnSpan="2" >
+			<ComboBox  IsEnabled="{Binding type_selector_enabled}" ItemsSource="{Binding UPLOAD_TYPES}" SelectedItem="{Binding upload_type}" Width="75"/>
+				<CheckBox Visibility="{Binding show_docker_options}" Content="Compression" IsChecked="{Binding use_compression, Mode=TwoWay}" VerticalAlignment="Center" Margin="10,0,0,0" />
+				<Label Visibility="{Binding show_docker_options}" Content=" TLS:"/>
+				<ComboBox Visibility="{Binding show_docker_options}" ItemsSource="{Binding TLS_MODES}" SelectedItem="{Binding tls_mode}" Width="110" Margin="5,0"/>
+			</StackPanel>
+			<Label Content="Host:" Grid.Row="1" />
+			<TextBox Text="{Binding hostname}" Grid.Column="1"  Grid.Row="1" />
+			<TextBox Text="{Binding port}" Width="40" Grid.Column="2"  Grid.Row="1" />
+		</Grid>
+		<Grid Grid.Row="1" Visibility="{Binding show_docker_options}">
+			<Grid.RowDefinitions>
+				<RowDefinition />
+				<RowDefinition />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="150"/>
+				<ColumnDefinition/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<Label Content="CA Cert/User:" Grid.Row="0" />
+			<controls:AutoCompleteBox x:Name="txtUser" VerticalAlignment="Center" Margin="10,0" Text="{Binding username,Mode=TwoWay}" Populating="FileCRTPathBox_OnPopulating" Grid.Row="0" Grid.Column="1" />
+			<Label Content="Private Key/Password:" Grid.Row="1" />
+			<controls:AutoCompleteBox x:Name="txtPassword" VerticalAlignment="Center" Margin="10,0" Text="{Binding password,Mode=TwoWay}"  Populating="FilePFXPathBox_OnPopulating" Grid.Row="1" Grid.Column="1" />
+			<Label Content="Container:" Grid.Row="2" />
+			<TextBox Text="{Binding container}" Grid.Row="2" Grid.Column="1" />
+			</Grid>
+
+		<Grid Grid.Row="1" Visibility="{Binding show_sftp_options}">
+			<Grid.RowDefinitions>
+				<RowDefinition />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="150"/>
+				<ColumnDefinition/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<Label Content="Username:" Grid.Row="0" />
+			<TextBox Text="{Binding username}" Grid.Row="0" Grid.Column="1" />
+			<Label Content="Password:" Grid.Row="1" />
+
+			<TextBox Grid.Row="1" Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+				<TextBox.Style>
+					<Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+						<Style.Resources>
+							<VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+								<VisualBrush.Visual>
+									<Label Content="Password (leave blank for paegent public key)" Foreground="LightGray" />
+								</VisualBrush.Visual>
+							</VisualBrush>
+						</Style.Resources>
+						<Style.Triggers>
+							<Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+								<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+							</Trigger>
+							<Trigger Property="Text" Value="{x:Null}">
+								<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+							</Trigger>
+							<Trigger Property="IsKeyboardFocused" Value="True">
+								<Setter Property="Background" Value="White" />
+							</Trigger>
+						</Style.Triggers>
+					</Style>
+				</TextBox.Style>
+			</TextBox>
+			</Grid>
+
+			<Grid Grid.Row="2">
+			<Grid.RowDefinitions>
+				<RowDefinition />
+				<RowDefinition />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="150"/>
+				<ColumnDefinition/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<Label Content="Local Folder:" Grid.Row="0" />
+			<controls:AutoCompleteBox x:Name="txtPath" Text="{Binding local_folder, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" Populating="FilePathBox_OnPopulating" />
+			<!--		<TextBox Text="{Binding local_folder}" Grid.Row="3" Grid.Column="1" />-->
+			<Label Content="Monitor Sub Folders:" Grid.Row="1" />
+			<CheckBox IsChecked="{Binding include_subfolders}" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" />
+			<Label Content="Remote Base Folder:" Grid.Row="2" />
+			<TextBox Text="{Binding remote_folder}" Grid.Row="2" Grid.Column="1" />
+		</Grid>
+		<StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Center">
+			<ComboBox IsEnabled="{Binding type_selector_enabled}" StaysOpenOnEdit="True" IsEditable="True" ItemsSource="{Binding hosts}" SelectedItem="{Binding selected_host, Mode=TwoWay}" Width="225" VerticalAlignment="Center" />
 			<Button Content="Delete" Margin="20,0,0,0"  Command="{Binding FavDelCmd, Mode=OneWay}" />
 			<Button Content="Save" Margin="20,0" Command="{Binding FavSaveCmd, Mode=OneWay}" />
 			<Button Content="Save As" Command="{Binding FavSaveAsCmd, Mode=OneWay}" />
 		</StackPanel>
-		<Button Content="{Binding action_button_content}" Command="{Binding  ToggleConnectedCmd, Mode=OneWay}" Grid.Row="7" Grid.ColumnSpan="2"  />
-		<Label Content="Ignore RegEx Pattern:" Grid.Row="8" />
-		<TextBox Text="{Binding ignore_regex,Mode=TwoWay}" Grid.Row="8" Grid.Column="1" />
-		
-		<TextBox Grid.Row="2" Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
-			<TextBox.Style>
-				<Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-					<Style.Resources>
-						<VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-							<VisualBrush.Visual>
-								<Label Content="Password (leave blank for paegent public key)" Foreground="LightGray" />
-							</VisualBrush.Visual>
-						</VisualBrush>
-					</Style.Resources>
-					<Style.Triggers>
-						<Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-							<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-						</Trigger>
-						<Trigger Property="Text" Value="{x:Null}">
-							<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-						</Trigger>
-						<Trigger Property="IsKeyboardFocused" Value="True">
-							<Setter Property="Background" Value="White" />
-						</Trigger>
-					</Style.Triggers>
-				</Style>
-			</TextBox.Style>
-		</TextBox>
+		<Button Content="{Binding action_button_content}" Command="{Binding  ToggleConnectedCmd, Mode=OneWay}" Grid.Row="4"  />
+		<StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center">
+			<Label Content="Ignore RegEx Pattern:"/>
+			<TextBox Text="{Binding ignore_regex,Mode=TwoWay}" />
+		</StackPanel>
 	</Grid>
 </Window>
