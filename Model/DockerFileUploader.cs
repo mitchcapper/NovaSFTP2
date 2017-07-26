@@ -19,6 +19,7 @@ using SharpCompress.Writers;
 
 namespace NovaSFTP2.Model {
 	class DockerFileUploader : BaseFileUploader, IDisposable {
+		public DockerFileUploader() : base(UPLOADER_TYPE.DOCKER) { }
 		private bool compress;
 		private string ca_cert_path;
 		private string container;

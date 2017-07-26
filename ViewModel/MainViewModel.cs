@@ -130,11 +130,13 @@ namespace NovaSFTP2.ViewModel {
 		}
 		private bool _use_compression;
 		private void ConnectedChanged(object sender, EventArgs event_args) {
-			UpdateButton();
-			if (connected)
-				StartWatcher();
-			else
-				StopWatcher();
+			dispatcher.BeginInvoke((Action)(() => {
+				UpdateButton();
+				if (connected)
+					StartWatcher();
+				else
+					StopWatcher();
+			}));
 		}
 
 		private async void StartWatcher() {

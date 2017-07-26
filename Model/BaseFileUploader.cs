@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using NovaSFTP2.ViewModel;
 
 namespace NovaSFTP2.Model {
 	public class UploadProgressEvtArgs {
@@ -14,12 +15,11 @@ namespace NovaSFTP2.Model {
 		public ulong uploaded_bytes;
 	}
 	public abstract class BaseFileUploader {
-		protected BaseFileUploader() {
+		protected BaseFileUploader(UPLOADER_TYPE type) {
 			upload_thread = new Thread(UploadLoop);
-			upload_thread.Name = "BackgroundUploader";
+			upload_thread.Name = type + " BackgroundUploader";
 			upload_thread.IsBackground = true;
 			upload_thread.Start();
-
 		}
 		public EventHandler ConnectedChanged { get; set; }
 		public abstract bool is_connected { get; }
@@ -35,6 +35,8 @@ namespace NovaSFTP2.Model {
 		protected abstract Task UploadFile(Stream file, String remote_name);
 
 		public void AddFileUpload(String local_file) {
+			if (!upload_thread.IsAlive)
+				MainWindow.ShowMessage("Background thread is not alive something very bad happened","Exit App");
 			if (Directory.Exists(local_file))
 				return;
 			if (ignore_regex.IsMatch(local_file))

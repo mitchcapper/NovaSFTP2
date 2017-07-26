@@ -26,6 +26,7 @@ Features
   - Can ignore TLS hostname mis-mismatches
   - Option to use bzip2 compression (for files up to 5MB)
   - Uses Docker.DotNet
+
 Notes
 -----
 - Will not create remote folders if they don't exist

@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows;
+using NovaSFTP2.ViewModel;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using Renci.SshNet.Pageant;
@@ -12,7 +13,7 @@ namespace NovaSFTP2.Model {
 	
 
 	class SFTPFileUploader : BaseFileUploader {
-
+		public SFTPFileUploader() : base(UPLOADER_TYPE.SFTP) { }
 		private SftpClient client;
 		public async Task connect(String host, int port, String user, String local_path, String remote_path, String password) {
 			SetLocalPath(local_path);
