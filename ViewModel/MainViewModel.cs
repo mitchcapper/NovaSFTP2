@@ -189,6 +189,7 @@ namespace NovaSFTP2.ViewModel {
 		}
 		private async Task disconnect() {
 			StopWatcher();
+			uploader.ClearQueue();
 			await uploader.disconnect();
 		}
 		private bool connected { get { return uploader?.is_connected ?? false; } }

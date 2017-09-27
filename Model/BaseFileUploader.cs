@@ -55,6 +55,9 @@ namespace NovaSFTP2.Model {
 		}
 		private string base_path;
 		private int base_path_len;
+		public void ClearQueue() {
+			CurQueue = new ConcurrentQueue<string>();
+		}
 		private void UploadLoop() {//don't make async as then lose thread name
 			string file;
 			string last_file = null;
@@ -65,10 +68,10 @@ namespace NovaSFTP2.Model {
 					while (CurQueue.TryDequeue(out file)) {
 						if (!is_connected) {
 							was_connected_cnt = 0;
-							CurQueue = new ConcurrentQueue<string>();
+							ClearQueue();
 							disconnect().Wait();
 							MainWindow.ShowMessage("Connection to server lost.", "Lost Connection"); //maybe not supposed to ever happen? should have been caught sooner
-							break;
+							continue;
 						}
 						was_connected_cnt = 1;
 						if (file == last_file)
@@ -92,7 +95,7 @@ namespace NovaSFTP2.Model {
 								Task.Delay(100).Wait();
 								if (!CurQueue.Contains(file))
 									CurQueue.Enqueue(file);
-								return;
+								continue;
 							}
 							throw e;
 						}

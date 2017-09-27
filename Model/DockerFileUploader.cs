@@ -42,7 +42,7 @@ namespace NovaSFTP2.Model {
 			host += ":" + port;
 			Credentials creds = new AnonymousCredentials();
 			if (File.Exists(password)) {
-				creds = new CertificateCredentials(new X509Certificate2(password, ""));
+				creds = new CertificateCredentials(new X509Certificate2(password, "")); //warning sym links will throw an error here
 				ca_cert_path = user;
 				((CertificateCredentials)creds).ServerCertificateValidationCallback += ServerCertificateValidationCallback;//not sure why cannot do this for basic auth
 			} else if (!String.IsNullOrWhiteSpace(user) && !String.IsNullOrWhiteSpace(password)) {
@@ -94,7 +94,7 @@ namespace NovaSFTP2.Model {
 					return true;
 				return false;
 			}
-			var cert = new X509Certificate2(ca_cert_path);
+			var cert = new X509Certificate2(ca_cert_path); //warning sym links will throw an error here
 			switch (ssl_policy_errors) {
 				case System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors:
 					break;
