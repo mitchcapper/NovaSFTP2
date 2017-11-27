@@ -10,18 +10,7 @@ using System.Windows.Input;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.Command;
 using NovaSFTP2.Model;
-using Docker.DotNet.X509;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
-using Docker.DotNet;
-using Docker.DotNet.Models;
-using SharpCompress.Writers;
-using SharpCompress.Common;
-using System.Net;
-using System.Net.Security;
-using SharpCompress.Archives.Tar;
 using System.Collections.Generic;
 
 namespace NovaSFTP2.ViewModel {
@@ -87,10 +76,14 @@ namespace NovaSFTP2.ViewModel {
 					if (upload_type == UPLOADER_TYPE.DOCKER && username == "root") {
 						username = default_ca_path;
 						password = default_key_path;
+						if (port == DEFAULT_SSH_PORT)
+							port = DEFAULT_DOCKER_PORT;
 					} else if (upload_type == UPLOADER_TYPE.SFTP && username == default_ca_path) {
 						username = "root";
 						if (password == default_key_path)
 							password = "";
+						if (port == DEFAULT_DOCKER_PORT)
+							port = DEFAULT_SSH_PORT;
 					}
 					RaisePropertyChanged(() => show_docker_options);
 					RaisePropertyChanged(() => show_sftp_options);
@@ -252,9 +245,11 @@ namespace NovaSFTP2.ViewModel {
 			var name = InputWindow.GetInput("Save As Name", selected_host?.name);
 			if (String.IsNullOrWhiteSpace(name))
 				return;
-			_selected_host = new HostInfo { name = name };
-			hosts.Add(_selected_host);
+			var sln = new HostInfo { name = name };
+			hosts.Add(sln);
+			_selected_host = sln;
 			await FavSave();
+			RaisePropertyChanged(() => selected_host);
 		}
 		public EventHandler<double> ProgressMade;
 		private void UpdateRecent(String name) {
@@ -313,7 +308,9 @@ namespace NovaSFTP2.ViewModel {
 			get { return _port; }
 			set { Set(() => port, ref _port, value); }
 		}
-		private int _port = 22;
+		private int _port = DEFAULT_SSH_PORT;
+		private const int DEFAULT_SSH_PORT= 22;
+		private const int DEFAULT_DOCKER_PORT = 22000;
 
 		public string hostname {
 			get { return _hostname; }
