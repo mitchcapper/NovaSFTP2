@@ -133,14 +133,13 @@ namespace NovaSFTP2.ViewModel {
 		}
 
 		private async void StartWatcher() {
-			if (local_folder.EndsWith("\\"))
-				watcher.Path = local_folder.Substring(0, local_folder.Length - 1);
-			else
-				watcher.Path = local_folder;
-
-			watcher.IncludeSubdirectories = include_subfolders;
 
 			try {
+				if (local_folder.EndsWith("\\"))
+					watcher.Path = local_folder.Substring(0, local_folder.Length - 1);
+				else
+					watcher.Path = local_folder;
+				watcher.IncludeSubdirectories = include_subfolders;
 				watcher.EnableRaisingEvents = true;
 			} catch (ArgumentException e) {
 				await disconnect();

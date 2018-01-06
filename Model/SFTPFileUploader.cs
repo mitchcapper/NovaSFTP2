@@ -72,7 +72,9 @@ namespace NovaSFTP2.Model {
 		}
 		protected override async Task UploadFile(Stream file, String remote_name) {
 			try {
-				client.UploadFile(file, remote_name, true, l => UploadCallback(l, (ulong)file.Length));
+				var total_size = (ulong)file.Length;//we need to cache this is technically it could be disposed right before the callback is called:)
+				client.UploadFile(file, remote_name, true, l => UploadCallback(l, total_size));
+				//ObjectDisposedException
 			} catch (SshConnectionException e) {
 				await disconnect();
 				MainWindow.ShowMessage("Connection to server lost details: " + e.Message, "Lost Connection");
