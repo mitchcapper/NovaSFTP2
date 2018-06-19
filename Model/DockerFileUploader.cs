@@ -41,7 +41,10 @@ namespace NovaSFTP2.Model {
 				host = "tcp://" + host;
 			host += ":" + port;
 			Credentials creds = new AnonymousCredentials();
-			if (File.Exists(password)) {
+			var pswd_info = new FileInfo(password);
+			if (pswd_info.Exists) {
+				if (pswd_info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+						throw new Exception	("Sysmlinks will crash this;0");
 				creds = new CertificateCredentials(new X509Certificate2(password, "")); //warning sym links will throw an error here
 				ca_cert_path = user;
 				((CertificateCredentials)creds).ServerCertificateValidationCallback += ServerCertificateValidationCallback;//not sure why cannot do this for basic auth
