@@ -106,7 +106,7 @@ namespace NovaSFTP2.Model {
 						if (client.IsConnected)
 							client.Disconnect();
 					});
-					await Task.WhenAny(tsk, Task.Delay(60 * 1000));
+					await await Task.WhenAny(tsk, Task.Delay(60 * 1000));
 					if (!tsk.IsCompleted) {
 						MessageBox.Show("Prevented a hang on disconnect");
 					}
