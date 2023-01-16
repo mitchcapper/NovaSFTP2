@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using NovaSFTP2.ViewModel;
@@ -29,6 +30,10 @@ namespace NovaSFTP2.Model {
 		public string localFolder;
 		public bool recursive;
 		public string remoteFolder;
+		[OptionalField(VersionAdded = 2)]
+		public bool ignoreTSSame;
+		[OptionalField(VersionAdded = 2)]
+		public bool cacheExistingTS;
 		public string container;
 		public UPLOADER_TYPE upload_type = UPLOADER_TYPE.SFTP;
 		public TLS_MODE tls_mode = TLS_MODE.Required;

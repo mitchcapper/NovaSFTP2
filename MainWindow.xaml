@@ -135,7 +135,14 @@
 			<controls:AutoCompleteBox x:Name="txtPath" Text="{Binding local_folder, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" Populating="FilePathBox_OnPopulating" />
 			<!--		<TextBox Text="{Binding local_folder}" Grid.Row="3" Grid.Column="1" />-->
 			<Label Content="Monitor Sub Folders:" Grid.Row="1" />
-			<CheckBox IsChecked="{Binding include_subfolders}" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="10,0" />
+			<StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+				<CheckBox IsChecked="{Binding include_subfolders}" Margin="10,0"  VerticalAlignment="Center"/>
+				<Label FontSize="10" Content="Ignore when TS and size same:" />
+				<CheckBox IsChecked="{Binding ignore_ts_size_same}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+				<Label FontSize="10" Content="Pre-cache existing:" />
+				<CheckBox IsChecked="{Binding cache_existing_ts}" IsEnabled="{Binding ignore_ts_size_same}" Margin="0"  VerticalAlignment="Center"/>
+			</StackPanel>
+			
 			<Label Content="Remote Base Folder:" Grid.Row="2" />
 			<TextBox Text="{Binding remote_folder}" Grid.Row="2" Grid.Column="1" />
 		</Grid>

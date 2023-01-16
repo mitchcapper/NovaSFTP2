@@ -12,6 +12,7 @@ using System.Windows.Threading;
 using GalaSoft.MvvmLight;
 using NovaSFTP2.Model;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace NovaSFTP2.ViewModel {
 	public enum UPLOADER_TYPE { SFTP, DOCKER }
@@ -133,12 +134,15 @@ namespace NovaSFTP2.ViewModel {
 		}
 
 		private async void StartWatcher() {
+			timestamp_previous_cache = new();
 
 			try {
 				if (local_folder.EndsWith("\\"))
 					watcher.Path = local_folder.Substring(0, local_folder.Length - 1);
 				else
 					watcher.Path = local_folder;
+				if (ignore_ts_size_same && cache_existing_ts)
+					await Task.Run(()=> PreCacheFilesTS(timestamp_previous_cache, new DirectoryInfo( watcher.Path), include_subfolders));
 				watcher.IncludeSubdirectories = include_subfolders;
 				watcher.EnableRaisingEvents = true;
 			} catch (ArgumentException e) {
@@ -146,7 +150,11 @@ namespace NovaSFTP2.ViewModel {
 				MainWindow.ShowMessage("Unable to watch local folder due to: " + e.Message, "Invalid Local Folder");
 			}
 		}
+
+	
+
 		private void StopWatcher() {
+			timestamp_previous_cache = null;
 			watcher.EnableRaisingEvents = false;
 		}
 		private void UpdateButton() {
@@ -195,8 +203,32 @@ namespace NovaSFTP2.ViewModel {
 		private void FileChanged(object sender, FileSystemEventArgs args) {
 			if (args.ChangeType == WatcherChangeTypes.Deleted)
 				return;
+			if (IgnoreAsSeemsSame(args.FullPath))
+				return;
 			uploader.AddFileUpload(args.FullPath);
 		}
+		private void PreCacheFilesTS(ConcurrentDictionary<string, string> timestamp_previous_cache, DirectoryInfo dir, bool include_subfolders,int CUR_DEPTH=0) {
+			if (this.timestamp_previous_cache != timestamp_previous_cache)//incase they cancelled ore restarted
+				return;
+			var MAX_DEPTH = 15;//to avoid being crazy for loops or what have you
+			foreach (var file in dir.GetFiles())
+				timestamp_previous_cache[file.FullName] = GetFileTSKey(file);
+			if (include_subfolders || CUR_DEPTH == MAX_DEPTH)
+				return;
+			foreach (var dir2 in dir.GetDirectories())
+				PreCacheFilesTS(timestamp_previous_cache, dir2, include_subfolders, CUR_DEPTH + 1);
+		}
+		private string GetFileTSKey(FileInfo info) => info.Exists ?  $"{info.CreationTime}-{info.LastWriteTime}-{info.Length}" : null;
+		private bool IgnoreAsSeemsSame(String path) {
+			if (!ignore_ts_size_same)
+				return false;
+			var info = new FileInfo(path);
+			var fkey = GetFileTSKey(info);
+			var wasName = false;
+			timestamp_previous_cache.AddOrUpdate(info.FullName, fkey, (_, oldVal) => (wasName = oldVal == fkey) ? fkey : fkey);
+			return wasName;
+		}
+		private ConcurrentDictionary<string, string> timestamp_previous_cache;
 
 		private void UploadEvtProgress(object sender, UploadProgressEvtArgs args) {
 			if (ProgressMade == null)
@@ -227,6 +259,8 @@ namespace NovaSFTP2.ViewModel {
 			selected_host.port = port;
 			selected_host.localFolder = local_folder;
 			selected_host.recursive = include_subfolders;
+			selected_host.cacheExistingTS = cache_existing_ts;
+			selected_host.ignoreTSSame = ignore_ts_size_same;
 			selected_host.remoteFolder = remote_folder;
 			selected_host.username = username;
 			if (File.Exists(password))
@@ -340,6 +374,8 @@ namespace NovaSFTP2.ViewModel {
 					port = selected_host.port;
 					local_folder = selected_host.localFolder;
 					include_subfolders = selected_host.recursive;
+					ignore_ts_size_same = selected_host.ignoreTSSame;
+					cache_existing_ts = selected_host.cacheExistingTS;
 					remote_folder = selected_host.remoteFolder;
 					container = selected_host.container;
 					tls_mode = selected_host.tls_mode;
@@ -365,6 +401,20 @@ namespace NovaSFTP2.ViewModel {
 			set { Set(() => local_folder, ref _local_folder, value); }
 		}
 		private string _local_folder;
+
+
+
+		public bool cache_existing_ts {
+			get => _cache_existing_ts;
+			set => Set(ref _cache_existing_ts, value);
+		}
+		private bool _cache_existing_ts;
+
+		public bool ignore_ts_size_same {
+			get => _ignore_ts_size_same;
+			set => Set(ref _ignore_ts_size_same, value);
+		}
+		private bool _ignore_ts_size_same;
 
 		public bool include_subfolders {
 			get { return _include_subfolders; }
