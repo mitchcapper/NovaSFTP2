@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
@@ -7,7 +7,7 @@ using System.Windows;
 using NovaSFTP2.ViewModel;
 using Renci.SshNet;
 using Renci.SshNet.Common;
-using Renci.SshNet.Pageant;
+using SshNet.Agent;
 
 namespace NovaSFTP2.Model {
 	
@@ -22,9 +22,10 @@ namespace NovaSFTP2.Model {
 				return;
 			}
 			if (String.IsNullOrWhiteSpace(password)) {
-				var agent = new PageantProtocol();
-				var conn = new AgentConnectionInfo(host, port, user, agent);
-				client = new SftpClient(conn);
+				var agent = new Pageant();
+				var keys = agent.RequestIdentities();
+
+				client = new SftpClient(host, port, user, keys);
 			} else {
 				client = new SftpClient(host, port, user, password);
 			}
