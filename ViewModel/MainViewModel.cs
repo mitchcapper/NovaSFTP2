@@ -311,7 +311,7 @@ namespace NovaSFTP2.ViewModel {
 		private readonly string recent_file = HostInfo.GetUserAppDataPath() + "\\program.recent";
 		private void UpdateJumpList() {
 			var list = new JumpList();
-			var app_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			var app_path = System.Reflection.Assembly.GetExecutingAssembly().Location.Replace(".dll", ".exe");
 			if (File.Exists(recent_file)) {
 				TextReader tr = new StreamReader(recent_file);
 				string line;
