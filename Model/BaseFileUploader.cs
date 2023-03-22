@@ -39,7 +39,7 @@ namespace NovaSFTP2.Model {
 				MainWindow.ShowMessage("Background thread is not alive something very bad happened","Exit App");
 			if (Directory.Exists(local_file))
 				return;
-			if (ignore_regex.IsMatch(local_file))
+			if (ignore_regex?.IsMatch(local_file) == true)
 				return;
 			last_changed[local_file] = DateTime.Now;
 			if (!CurQueue.Contains(local_file))
@@ -48,7 +48,7 @@ namespace NovaSFTP2.Model {
 
 		private Regex ignore_regex;
 		public void SetRegex(string ignore_regex_str) {
-			ignore_regex = new Regex(ignore_regex_str, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+			ignore_regex = String.IsNullOrWhiteSpace(ignore_regex_str) ? null :  new Regex(ignore_regex_str, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 		}
 		protected void ConnChanged() {
 			ConnectedChanged?.Invoke(null, null);
