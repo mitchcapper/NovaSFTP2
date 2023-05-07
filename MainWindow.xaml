@@ -94,7 +94,7 @@
 			<TextBox Text="{Binding username}" Grid.Row="0" Grid.Column="1" />
 			<Label Content="Password:" Grid.Row="1" />
 
-			<TextBox Grid.Row="1" Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+			<TextBox Grid.Row="1" Grid.Column="1" Margin="10,0" VerticalAlignment="Center" Text="{Binding password}">
 				<TextBox.Style>
 					<Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
 						<Style.Resources>
