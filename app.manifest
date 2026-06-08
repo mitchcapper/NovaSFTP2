@@ -60,20 +60,9 @@
   </application>
   
 
-  <!-- Enable themes for Windows common controls and dialogs (Windows XP and later) -->
-  
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity
-          type="win32"
-          name="Microsoft.Windows.Common-Controls"
-          version="6.0.0.0"
-          processorArchitecture="*"
-          publicKeyToken="6595b64144ccf1df"
-          language="*"
-        />
-    </dependentAssembly>
-  </dependency>
-  
+  <!-- NOTE: The Microsoft.Windows.Common-Controls (ComCtl32 v6) <dependency> that the
+       default template places here was removed. WPF does not use Win32 common controls,
+       and ClickOnce's manifest generator (GenerateApplicationManifest) fails with MSB3113
+       trying to resolve it as a native reference file. -->
 
 </assembly>

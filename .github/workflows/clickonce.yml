@@ -1,0 +1,48 @@
+name: Build ClickOnce Installer
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ClickOnce manifest generation (Mage / GenerateApplicationManifest) lives in
+      # the Visual Studio MSBuild, not the dotnet CLI, so we add it to PATH.
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # Install the .NET 10 SDK so MSBuild can build the net10.0-windows target.
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore NovaSFTP2.csproj -r win-x64
+
+      # Build a version like 1.0.<run_number>.0 so each run is uniquely versioned,
+      # which ClickOnce needs to recognise updates.
+      - name: Publish ClickOnce
+        run: >
+          msbuild NovaSFTP2.csproj
+          /t:Publish
+          /p:PublishProfile=ClickOnceProfile
+          /p:Configuration=Release
+          /p:ApplicationVersion=1.0.${{ github.run_number }}.0
+          /restore:false
+
+      - name: Upload ClickOnce installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaSFTP2-ClickOnce-1.0.${{ github.run_number }}.0
+          path: bin/publish/
+          if-no-files-found: error
