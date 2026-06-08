@@ -13,8 +13,10 @@ namespace NovaSFTP2.Model {
 	public class SettingsInfo {
 		public HostInfo[] hosts;
 		public string ignore_regex;
+		public string theme;
 		public SettingsInfo() {
 			ignore_regex = @"( [.](svn|git|tmp[/\\]) | mrgtmp | ~ | \.tmp$)";
+			theme="System";
 			hosts = new HostInfo[0];
 		}
 		

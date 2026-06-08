@@ -97,7 +97,7 @@ namespace NovaSFTP2.Model {
 									CurQueue.Enqueue(file);
 								continue;
 							}
-							throw e;
+							throw;
 						}
 						if (!CurQueue.Contains(file))
 							last_changed.Remove(file);

@@ -17,15 +17,15 @@ Features
 - SFTP Features:
   - Paegent support for publickey auth (in addition to password)
   - TCP Keep alive support
-  - Uses Renci.SshNet
+  - Uses [SshNet.Agent](https://github.com/darinkes/SshNet.Agent)
 - Docker Features:
   - Certificate based authentication
   - Basic HTTP authentication
-  - Anonymous Authentication  
+  - Anonymous Authentication
   - Optional manual CA cert specification (otherwise uses computer's store)
   - Can ignore TLS hostname mis-mismatches
   - Option to use bzip2 compression (for files up to 5MB)
-  - Uses Docker.DotNet
+  - Uses [Docker.DotNet.Enhanced](https://github.com/testcontainers/Docker.DotNet/)
 
 Notes
 -----

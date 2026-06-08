@@ -53,6 +53,7 @@ namespace NovaSFTP2.ViewModel {
 			UpdateButton();
 			try {
 				ignore_regex = settings.ignore_regex;
+				current_theme = String.IsNullOrWhiteSpace( settings.theme) ?  "System" : settings.theme;
 			} catch (Exception) { }
 			//test_perf();
 		}
@@ -88,6 +89,9 @@ namespace NovaSFTP2.ViewModel {
 					}
 					RaisePropertyChanged(() => show_docker_options);
 					RaisePropertyChanged(() => show_sftp_options);
+					RaisePropertyChanged(() => UsernameLabel);
+					RaisePropertyChanged(() => PasswordLabel);
+					
 				}
 
 			}
@@ -187,6 +191,11 @@ namespace NovaSFTP2.ViewModel {
 			if (String.IsNullOrWhiteSpace(selected_host?.name) == false)
 				UpdateRecent(selected_host.name);
 		}
+
+		public string UsernameLabel  => (upload_type == UPLOADER_TYPE.DOCKER ? "CA Cert/User" : "Username") + ":";
+		public string PasswordLabel  => (upload_type == UPLOADER_TYPE.DOCKER ? "Private Key/Pass" : "Password") + ":";
+
+
 		private async Task disconnect() {
 			StopWatcher();
 			uploader.ClearQueue();
@@ -243,7 +252,7 @@ namespace NovaSFTP2.ViewModel {
 				return;
 			}
 			hosts.Remove(selected_host);
-			await HostInfo.SaveSettings(new SettingsInfo { ignore_regex = ignore_regex, hosts = hosts.ToArray() });
+			await HostInfo.SaveSettings(new SettingsInfo { ignore_regex = ignore_regex, theme = current_theme, hosts = hosts.ToArray() });
 		}
 		public ICommand FavSaveCmd => new OurCommand(FavSave);
 		private async Task FavSave() {
@@ -268,7 +277,7 @@ namespace NovaSFTP2.ViewModel {
 			selected_host.container = container;
 			selected_host.tls_mode = tls_mode;
 			selected_host.use_compression = use_compression;
-			await HostInfo.SaveSettings(new SettingsInfo { ignore_regex = ignore_regex, hosts = hosts.ToArray() });
+			await HostInfo.SaveSettings(new SettingsInfo { ignore_regex = ignore_regex,theme=current_theme, hosts = hosts.ToArray() });
 		}
 
 		public ICommand FavSaveAsCmd => new OurCommand(FavSaveAs);
@@ -427,6 +436,11 @@ namespace NovaSFTP2.ViewModel {
 			set { Set(() => action_button_content, ref _action_button_content, value); }
 		}
 		private string _action_button_content;
+
+
+		public string current_theme {
+			get; set => Set(ref field, value);
+		}
 
 
 		public string ignore_regex {

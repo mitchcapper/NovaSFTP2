@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shell;
+using iNKORE.UI.WPF.Modern.Controls;
 using NovaSFTP2.Model;
 using NovaSFTP2.ViewModel;
 using Path = System.IO.Path;
@@ -31,7 +33,7 @@ namespace NovaSFTP2 {
 			instance.Dispatcher.Invoke(() => {
 				instance.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;
 				instance.TaskbarItemInfo.ProgressValue = 100;
-				MessageBox.Show(instance, message, caption);
+				System.Windows.MessageBox.Show(instance, message, caption);
 				instance.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
 			});
 		}
@@ -60,47 +62,58 @@ namespace NovaSFTP2 {
 			Dispatcher.BeginInvoke((Action)(() => ThreadedProgMade(d)));
 		}
 
-		private void FileCRTPathBox_OnPopulating(object sender, PopulatingEventArgs e) {
-			FilePathBox_OnPopulating(txtUser, "pem", sender, e);
+		private void FileCRTPathBox_OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e) {
+			UpdatePathSuggestions(sender, "pem", e);
 		}
-		private void FilePFXPathBox_OnPopulating(object sender, PopulatingEventArgs e) {
-			FilePathBox_OnPopulating(txtPassword, "pfx", sender, e);
+		private void FilePFXPathBox_OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e) {
+			UpdatePathSuggestions(sender, "pfx", e);
 		}
-		private void FilePathBox_OnPopulating(object sender, PopulatingEventArgs e) {
-			FilePathBox_OnPopulating(txtPath, null, sender, e);
+		private void FilePathBox_OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e) {
+			UpdatePathSuggestions(sender, null, e);
 		}
+		private void PathBox_OnSuggestionChosen(object sender, AutoSuggestBoxSuggestionChosenEventArgs e) {
+			if (sender is AutoSuggestBox box && e.SelectedItem is string path)
+				box.Text = path;
+		}
+		private void PathBox_OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs e) {
+			if (sender is AutoSuggestBox box && e.ChosenSuggestion is string path)
+				box.Text = path;
+		}
+		private static void UpdatePathSuggestions(object sender, string allowed_ext, AutoSuggestBoxTextChangedEventArgs e) {
+			if (sender is not AutoSuggestBox box || e.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
+				return;
 
-		private void FilePathBox_OnPopulating(AutoCompleteBox box, string allowed_ext, object sender, PopulatingEventArgs e) {
-			string text = box.Text;
-			string dirname = Path.GetDirectoryName(text);
-			if (Directory.Exists(text) && !text.EndsWith("\\."))
-				dirname = text;
-			var candidates = new List<string>();
-			if (!String.IsNullOrWhiteSpace(dirname)) {
-				try {
-					if (Directory.Exists(dirname) || Directory.Exists(Path.GetDirectoryName(dirname))) {
-						string[] dirs = Directory.GetDirectories(dirname, "*.*", SearchOption.TopDirectoryOnly);
+			box.ItemsSource = GetPathCandidates(box.Text, allowed_ext);
+		}
+		private static List<string> GetPathCandidates(string text, string allowed_ext) {
+			var searchText = text?.Trim() ?? String.Empty;
+			if (String.IsNullOrWhiteSpace(searchText))
+				return new List<string>();
 
+			var isExistingDirectory = Directory.Exists(searchText) && !searchText.EndsWith("\\.", StringComparison.Ordinal);
+			var dirname = isExistingDirectory ? searchText : Path.GetDirectoryName(searchText);
+			if (String.IsNullOrWhiteSpace(dirname) || !Directory.Exists(dirname))
+				return new List<string>();
 
-						Array.ForEach(new[] { dirs }, (x) =>
-							Array.ForEach(x, (y) => {
-								if (y.StartsWith(dirname, StringComparison.CurrentCultureIgnoreCase))
-									candidates.Add(y);
-							}));
-						if (!String.IsNullOrWhiteSpace(allowed_ext)) {
-							var files = Directory.GetFiles(dirname, "*." + allowed_ext, SearchOption.TopDirectoryOnly);
-							Array.ForEach(new[] { files }, (x) =>
-								Array.ForEach(x, (y) => {
-									if (y.StartsWith(dirname, StringComparison.CurrentCultureIgnoreCase))
-										candidates.Add(y);
-								}));
-						}
-					}
-				} catch (Exception) { }
+			var prefix = isExistingDirectory ? EnsureTrailingDirectorySeparator(searchText) : searchText;
+			try {
+				var candidates = Directory.GetDirectories(dirname, "*", SearchOption.TopDirectoryOnly)
+					.Where(path => path.StartsWith(prefix, StringComparison.CurrentCultureIgnoreCase))
+					.ToList();
+				if (!String.IsNullOrWhiteSpace(allowed_ext)) {
+					var files = Directory.GetFiles(dirname, "*." + allowed_ext, SearchOption.TopDirectoryOnly)
+						.Where(path => path.StartsWith(prefix, StringComparison.CurrentCultureIgnoreCase));
+					candidates.AddRange(files);
+				}
+			return candidates;
+			} catch (Exception) {
+				return new List<string>();
 			}
-			box.ItemsSource = candidates;
-			box.PopulateComplete();
-
+		}
+		private static string EnsureTrailingDirectorySeparator(string path) {
+			return path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar)
+				? path
+				: path + Path.DirectorySeparatorChar;
 		}
 	}
 }

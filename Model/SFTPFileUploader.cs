@@ -62,7 +62,7 @@ namespace NovaSFTP2.Model {
 			} catch (Exception ee) {
 				await disconnect();
 				if (Debugger.IsAttached)
-					throw ee;
+					throw;
 				MainWindow.ShowMessage("unknown error let us know: " + ee.Message, "Unknown Error");
 			}
 		}
@@ -93,7 +93,7 @@ namespace NovaSFTP2.Model {
 					await disconnect();
 					MainWindow.ShowMessage("General failure from SSH Libary", "General Failure");
 				} else
-					throw e;
+					throw;
 			}
 		}
 

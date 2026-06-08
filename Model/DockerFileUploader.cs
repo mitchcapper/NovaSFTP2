@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.BasicAuth;
+using Docker.DotNet.Handler.Abstractions;
 using Docker.DotNet.Models;
 using Docker.DotNet.X509;
 using NovaSFTP2.ViewModel;
@@ -40,19 +41,24 @@ namespace NovaSFTP2.Model {
 			if (host.IndexOf("://") == -1)
 				host = "tcp://" + host;
 			host += ":" + port;
-			Credentials creds = new AnonymousCredentials();
+			IAuthProvider creds = null;
 			var pswd_info = new FileInfo(password);
 			if (pswd_info.Exists) {
 				if (pswd_info.Attributes.HasFlag(FileAttributes.ReparsePoint))
-						throw new Exception	("Sysmlinks will crash this;0");
+					throw new Exception("Sysmlinks will crash this;0");
 				creds = new CertificateCredentials(new X509Certificate2(password, "")); //warning sym links will throw an error here
 				ca_cert_path = user;
 				((CertificateCredentials)creds).ServerCertificateValidationCallback += ServerCertificateValidationCallback;//not sure why cannot do this for basic auth
 			} else if (!String.IsNullOrWhiteSpace(user) && !String.IsNullOrWhiteSpace(password)) {
 				creds = new BasicAuthCredentials(user, password, tls_mode != TLS_MODE.None);
 			}
-			var config = new DockerClientConfiguration(new Uri(host), creds);
-			client = config.CreateClient();
+			var builder = new DockerClientBuilder()
+				.WithEndpoint(new(host));
+			if (creds != null)
+				builder.WithAuthProvider(creds);
+
+			client = builder.Build();
+
 			try {
 				var stats = await client.Containers.InspectContainerAsync(container);
 				if (!stats.State.Running)
@@ -80,7 +86,7 @@ namespace NovaSFTP2.Model {
 							if (e.InnerException.Message == "Unexpected end of stream")
 								MainWindow.ShowMessage("Unexpected stream end, try to make sure it is not supposed to be tls(or you forgot username/password)", "Request Exception");
 							if (e.InnerException.Message == "Unable to read data from the transport connection: An existing connection was forcibly closed by the remote host.")
-								MainWindow.ShowMessage("Connection closed by remote host, make sure the path exists you are uploading to (and it is not a file).","Request Exception");
+								MainWindow.ShowMessage("Connection closed by remote host, make sure the path exists you are uploading to (and it is not a file).", "Request Exception");
 						} else
 							MainWindow.ShowMessage(exp_msg, "Request Exception");
 						return;
@@ -141,26 +147,29 @@ namespace NovaSFTP2.Model {
 					var use_compression = compress;
 					if (file.Length > 1024 * 1024 * 5) //if more than 5 megs don't comress
 						use_compression = false;
-					var writer = WriterFactory.Open(stream, ArchiveType.Tar, new WriterOptions(use_compression ? CompressionType.BZip2 : CompressionType.None) {LeaveStreamOpen = true});
-					var arr = remote_name.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
+
+					// https://docs.docker.com/reference/api/engine/version/v1.54/#tag/Container/operation/ContainerArchive only supports bzip2, gzip, or xz right now
+					var writer = WriterFactory.OpenWriter(stream, ArchiveType.Tar, new WriterOptions(use_compression ? CompressionType.BZip2 : CompressionType.None) { LeaveStreamOpen = true });
+					var arr = remote_name.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 					var path = String.Join("/", arr.Take(arr.Length - 1));
 
 					writer.Write(arr[arr.Length - 1], file);
 					writer.Dispose();
 					var len = stream.Length;
 					stream.Seek(0, SeekOrigin.Begin);
-					UploadEvtProgress?.Invoke(this, new UploadProgressEvtArgs {total_bytes = 100, uploaded_bytes = 1});
+					UploadEvtProgress?.Invoke(this, new UploadProgressEvtArgs { total_bytes = 100, uploaded_bytes = 1 });
 					try {
-						await client.Containers.ExtractArchiveToContainerAsync(container, new ContainerPathStatParameters() {Path = path}, stream, cancel.Token);
+
+						await client.Containers.ExtractArchiveToContainerAsync(container, new() { Path = path }, stream, cancel.Token);
 					} catch (Exception ex) {
 						if (ex is TaskCanceledException || ex.InnerException is TaskCanceledException)
 							return;
-						throw ex;
+						throw;
 					}
-					UploadEvtProgress?.Invoke(this, new UploadProgressEvtArgs {total_bytes = 1, uploaded_bytes = 1});
+					UploadEvtProgress?.Invoke(this, new UploadProgressEvtArgs { total_bytes = 1, uploaded_bytes = 1 });
 				}
-				
-		} catch (Exception e) {
+
+			} catch (Exception e) {
 				HandleException(e);
 			}
 		}
