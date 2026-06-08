@@ -37,13 +37,13 @@ jobs:
           /t:Publish
           /p:PublishProfile=ClickOnceProfile
           /p:Configuration=Release
-          /p:ApplicationVersion=1.0.${{ github.run_number }}.0
+          /p:ApplicationVersion=2.0.${{ github.run_number }}.0
           /restore:false
 
       - name: Upload ClickOnce installer
         uses: actions/upload-artifact@v4
         with:
-          name: NovaSFTP2-ClickOnce-1.0.${{ github.run_number }}.0
+          name: NovaSFTP2-ClickOnce-2.0.${{ github.run_number }}.0
           path: bin/publish/
           if-no-files-found: error
 
@@ -55,13 +55,13 @@ jobs:
           -c Release
           -r win-x64
           --self-contained false
-          -p:Version=1.0.${{ github.run_number }}.0
+          -p:Version=2.0.${{ github.run_number }}.0
           -o bin/portable
 
       # upload-artifact packages the folder as a downloadable .zip.
       - name: Upload portable zip
         uses: actions/upload-artifact@v4
         with:
-          name: NovaSFTP2-Portable-1.0.${{ github.run_number }}.0
+          name: NovaSFTP2-Portable-2.0.${{ github.run_number }}.0
           path: bin/portable/
           if-no-files-found: error
